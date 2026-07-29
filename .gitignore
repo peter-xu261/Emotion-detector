@@ -1,0 +1,49 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Python environments
+venv/
+.venv/
+env/
+
+# Dataset
+data/
+datasets/
+FERPlus/
+
+# Training outputs
+runs/
+tensorboard/
+logs/
+*.log
+
+# Checkpoints not selected for release
+checkpoint.pth.tar
+models/**/checkpoint.pth.tar
+
+# TensorRT and CUDA cache
+*.engine
+*.plan
+*.cache
+.cache/
+
+# Temporary output
+output/
+outputs/
+test_result.jpg
+
+# Video files
+*.mp4
+*.avi
+*.mkv
+*.mov
+
+# Editors
+.vscode/
+.idea/
+
+# Operating system
+.DS_Store
+Thumbs.db
