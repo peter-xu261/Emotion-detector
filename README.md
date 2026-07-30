@@ -1,37 +1,19 @@
-# Emotion-detector
-
 # Jetson Emotion Detector
 
-## Project Overview
+A real-time facial-expression detector built on the NVIDIA Jetson Orin Nano. It detects the largest face in a camera frame and classifies it as angry, disgust, fear, happy, neutral, sad, or surprise.
 
-I built this project to detect facial expressions in real time using an NVIDIA Jetson Orin Nano. The system detects a face, crops it, and classifies the visible expression.
+This project is the first stage of a larger debate body-language analysis system.
 
-This project is the first stage of a larger debate body-language analysis system. My goal is to use computer vision to analyze how speakers present arguments during debates.
+![Live emotion detection demo](add-direct-image-link-here)
 
-## Model Development
+## The Algorithm
 
-I first trained an eight-class model using FERPlus:
+The project uses two neural networks:
 
-* Angry
-* Contempt
-* Disgust
-* Fear
-* Happy
-* Neutral
-* Sad
-* Surprise
+1. FaceNet detects faces in the camera frame.
+2. A custom ResNet-18 model classifies the expression of the largest detected face.
 
-Contempt was difficult to classify consistently and was often confused with other classes. I removed the contempt class and retrained the model with seven classes:
-
-* Angry
-* Disgust
-* Fear
-* Happy
-* Neutral
-* Sad
-* Surprise
-
-## System Pipeline
+The pipeline is:
 
 ```text
 USB camera
@@ -45,117 +27,54 @@ ResNet-18 classifies the expression
 The label and confidence are displayed
 ```
 
-FaceNet handles face detection. A custom ResNet-18 model handles emotion classification. Both models run on the Jetson Orin Nano.
+I trained the classifier using the FERPlus dataset.
 
-## Training Results
+I initially trained an eight-class model that included contempt. During testing, contempt was frequently confused with other expressions. I removed the contempt class and retrained the model with seven classes.
 
-```text
+The final model reached:
+
+
 Best epoch:          34
-Training loss:       0.69492
 Training accuracy:   73.9564%
-Validation loss:     0.72810
 Validation accuracy: 75.2758%
-```
+Validation loss:     0.72810
 
-The final model was exported to ONNX for deployment.
+![alt text](image.png)
 
-## Hardware
+The model was exported to ONNX and runs with GPU acceleration through NVIDIA Jetson Inference, CUDA, and TensorRT.
 
-* NVIDIA Jetson Orin Nano Developer Kit
-* Approximately 8 GB RAM
+Main dependencies:
+
+* NVIDIA Jetson Orin Nano
 * USB camera
-* NVIDIA JetPack
-* CUDA 12.2
-* 15W power mode
-
-## Software
-
+* NVIDIA Jetson Inference
 * Python 3
 * PyTorch
 * Torchvision
-* NVIDIA Jetson Inference
 * CUDA
 * TensorRT
 * ONNX
 * FaceNet
-* ResNet-18
-* Git
 * Git LFS
 
-## Dataset
+Current limitations:
 
-The model was trained using FERPlus:
+* It classifies only the largest detected face.
+* Accuracy may decrease with poor lighting, blur, head rotation, or partial face coverage.
+* Similar expressions may be confused.
+* It detects visible facial expressions only. It cannot determine a person’s true emotions or intentions.
+* Running FaceNet and ResNet-18 sequentially can create some delay.
 
-https://www.kaggle.com/datasets/arnabkumarroy02/ferplus?select=validation
+## Running This Project
 
-FERPlus contains cropped facial-expression images without face bounding boxes. FaceNet detects and crops faces before classification.
-
-The dataset is not included in this repository.
-
-```text
-data/emotions/
-├── train/
-│   ├── angry/
-│   ├── disgust/
-│   ├── fear/
-│   ├── happy/
-│   ├── neutral/
-│   ├── sad/
-│   └── surprise/
-├── test/
-│   ├── angry/
-│   ├── disgust/
-│   ├── fear/
-│   ├── happy/
-│   ├── neutral/
-│   ├── sad/
-│   └── surprise/
-└── validation/
-    ├── angry/
-    ├── disgust/
-    ├── fear/
-    ├── happy/
-    ├── neutral/
-    ├── sad/
-    └── surprise/
-```
-
-## Repository Structure
-
-```text
-Emotion-detector/
-├── README.md
-├── LICENSE
-├── requirements.txt
-├── .gitignore
-├── .gitattributes
-├── src/
-│   ├── train.py
-│   ├── live_emotion.py
-│   └── onnx_export.py
-├── models/
-│   └── emotions7_v2/
-│       ├── resnet18.onnx
-│       ├── model_best.pth.tar
-│       └── labels.txt
-├── docs/
-│   └── project-report.md
-└── media/
-    ├── live-demo.jpg
-    ├── training-results.png
-    └── system-diagram.png
-```
-
-## Installation
-
-Clone the repository:
+1. Clone the repository.
 
 ```bash
 git clone git@github.com:peter-xu261/Emotion-detector.git
 cd Emotion-detector
 ```
 
-Install Git LFS and download the model files:
+2. Install Git LFS and download the model files.
 
 ```bash
 sudo apt update
@@ -164,103 +83,42 @@ git lfs install
 git lfs pull
 ```
 
-Install NVIDIA Jetson Inference if needed:
+3. Install NVIDIA Jetson Inference if it is not already installed.
 
 ```bash
 cd ~
-git clone --recursive https://github.com/dusty-nv/jetson-inference
+
+git clone --recursive \
+  https://github.com/dusty-nv/jetson-inference
+
 cd jetson-inference
+
 mkdir build
 cd build
+
 cmake ../
 make -j$(nproc)
+
 sudo make install
 sudo ldconfig
 ```
 
-Installation steps may vary by JetPack version or Docker setup.
-
-## Model Files
-
-Deployment files:
-
-```text
-models/emotions7_v2/resnet18.onnx
-models/emotions7_v2/labels.txt
-```
-
-Training checkpoint:
-
-```text
-models/emotions7_v2/model_best.pth.tar
-```
-
-Labels:
-
-```text
-angry
-disgust
-fear
-happy
-neutral
-sad
-surprise
-```
-
-## Export and Test
-
-Export the trained model from the Jetson Inference classification directory:
+4. Enable Jetson performance mode.
 
 ```bash
-python3 onnx_export.py \
-  --model-dir=models/emotions7_v2
+sudo nvpmodel -m 0
+sudo jetson_clocks
 ```
 
-Verify the files:
-
-```bash
-ls -lh models/emotions7_v2/
-```
-
-### Test One Image
-
-```bash
-NET="models/emotions7_v2"
-IMAGE=$(find data/emotions/val -type f | head -n 1)
-
-imagenet.py \
-  --model="$NET/resnet18.onnx" \
-  --labels="$NET/labels.txt" \
-  --input_blob=input_0 \
-  --output_blob=output_0 \
-  "$IMAGE" \
-  test_result.jpg
-```
-
-### Test the Camera Classifier
-
-This command classifies the entire camera frame:
+5. Set the model path.
 
 ```bash
 NET="$HOME/jetson-inference/python/training/classification/models/emotions7_v2"
-
-DISPLAY=:0 imagenet.py \
-  --model="$NET/resnet18.onnx" \
-  --labels="$NET/labels.txt" \
-  --input_blob=input_0 \
-  --output_blob=output_0 \
-  --input-width=640 \
-  --input-height=480 \
-  --input-rate=20 \
-  /dev/video0 \
-  display://0
 ```
 
-### Run the Full Emotion Detector
+6. Run the live emotion detector.
 
 ```bash
-NET="$HOME/jetson-inference/python/training/classification/models/emotions7_v2"
-
 DISPLAY=:0 python3 "$HOME/jetson-inference/live_emotion.py" \
   /dev/video0 \
   display://0 \
@@ -279,71 +137,6 @@ DISPLAY=:0 python3 "$HOME/jetson-inference/live_emotion.py" \
   --input-rate=20
 ```
 
-Press `Ctrl+C` to stop.
+Press `Ctrl+C` to stop the program.
 
-## Performance
-
-Enable Jetson performance mode:
-
-```bash
-sudo nvpmodel -m 0
-sudo jetson_clocks
-```
-
-Monitor system usage:
-
-```bash
-sudo tegrastats --interval 1000
-```
-
-## Limitations
-
-The system classifies only the largest detected face. It may produce less accurate results with poor lighting, blur, head rotation, small faces, or partial face coverage.
-
-The model may confuse similar expressions, including fear and surprise, anger and disgust, or neutral and sadness.
-
-The model classifies visible facial expressions only. It cannot determine a person’s true feelings, intentions, or mental state.
-
-FaceNet and ResNet-18 run sequentially on the GPU, which can create processing delay.
-
-## Removing the Contempt Class
-
-I first trained an eight-class model. Contempt was difficult to classify because it often appears as a small facial movement and closely resembles other expressions.
-
-I removed contempt and retrained the model with seven classes. The final model reached 75.2758% validation accuracy.
-
-## Future Improvements
-
-Planned improvements include:
-
-* Multi-face classification
-* Custom webcam training data
-* Better performance under varied lighting
-* Confusion-matrix analysis
-* Faster inference
-* Head-pose, gesture, and posture analysis
-* Integration with my debate-training application
-
-## Ethical Use
-
-This project is an educational facial-expression classifier. Predictions may be incorrect and should not be used for employment, education, policing, healthcare, credibility assessment, or judgments about a person’s character.
-
-## Demo
-
-Demo video:
-
-```text
-Add demo video link here
-```
-
-## Acknowledgments
-
-This project uses NVIDIA Jetson Inference, Jetson Orin Nano, PyTorch, Torchvision, FERPlus, FaceNet, and ResNet-18.
-
-Jetson Inference:
-
-https://github.com/dusty-nv/jetson-inference
-
-## License
-
-This project uses the license included in the `LICENSE` file.
+[View a video explanation here](add-video-link-here)

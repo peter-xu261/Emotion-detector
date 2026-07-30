@@ -1,4 +1,12 @@
+# General Python dependencies
 numpy
 Pillow
-torch
-torchvision
+onnx
+tensorboard
+
+# PyTorch and Torchvision are supplied by the NVIDIA Jetson
+# Inference container or installed using NVIDIA's Jetson-compatible builds.
+# Do not install standard desktop PyTorch wheels on the Jetson.
+
+# jetson-inference and jetson-utils are installed separately from:
+# https://github.com/dusty-nv/jetson-inference
