@@ -139,4 +139,5 @@ DISPLAY=:0 python3 "$HOME/jetson-inference/live_emotion.py" \
 
 Press `Ctrl+C` to stop the program.
 
-[View a video explanation here](add-video-link-here)
+
+
